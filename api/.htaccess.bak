@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Якщо у вас папка називається Shops, то Base має бути такий:
+    RewriteBase /shops/api/
+
+    # Якщо запитуваний файл (наприклад test.php) ІСНУЄ фізично (!-f), не робити редірект
+    RewriteCond %{REQUEST_FILENAME} !-f
+    # Якщо запитувана папка ІСНУЄ фізично (!-d), не робити редірект
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Всі інші запити перенаправляти на index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Shop - Магазин техніки</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .product-card { transition: transform 0.2s; height: 100%; }
+        .product-card:hover { transform: translateY(-5px); shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .product-img { height: 200px; object-fit: contain; padding: 10px; background: #fff; }
+        .sidebar { background: #fff; padding: 20px; border-radius: 8px; }
+        .cart-badge { position: absolute; top: 0; right: 0; transform: translate(50%, -50%); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="fas fa-microchip"></i> Brain Shop</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <form class="d-flex mx-auto" onsubmit="searchProducts(event)">
+                <input class="form-control me-2" type="search" id="searchInput" placeholder="Пошук товарів..." aria-label="Search">
+                <button class="btn btn-outline-light" type="submit">Пошук</button>
+            </form>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="#" data-bs-toggle="modal" data-bs-target="#cartModal">
+                        <i class="fas fa-shopping-cart"></i> Кошик
+                        <span class="badge bg-danger rounded-pill cart-badge" id="cartCount">0</span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown" id="authSection">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> <span id="usernameDisplay">Гість</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Вхід</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Реєстрація</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="sidebar shadow-sm">
+                <h5>Категорії</h5>
+                <hr>
+                <div class="list-group list-group-flush" id="categoriesList">
+                    <a href="#" class="list-group-item list-group-item-action active" onclick="filterCategory(null, this)">Всі товари</a>
+                    </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 id="pageTitle">Всі товари</h4>
+                <select class="form-select w-auto" id="sortSelect" onchange="loadProducts()">
+                    <option value="name">За назвою</option>
+                    <option value="price&order=ASC">Спочатку дешевші</option>
+                    <option value="price&order=DESC">Спочатку дорожчі</option>
+                </select>
+            </div>
+            <div class="row row-cols-1 row-cols-md-3 g-4" id="productsGrid">
+                <div class="text-center w-100 mt-5"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Адмін панель -->
+<div id="adminPanel" style="display: none;" class="mt-4 p-3 bg-light border rounded">
+    <h5>Адмін панель</h5>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">Додати товар</button>
+</div>
+
+<div class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Вхід</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Пароль</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Увійти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="registerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Реєстрація</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label>Ім'я користувача</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Пароль</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Зареєструватися</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Додати товар</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label>Назва</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Опис</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>Ціна</label>
+                        <input type="number" step="0.01" class="form-control" name="price" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Кількість на складі</label>
+                        <input type="number" class="form-control" name="stock_quantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Категорія</label>
+                        <select class="form-control" name="category_id" required>
+                            <option value="1">Ноутбуки</option>
+                            <option value="2">Комплектуючі</option>
+                            <option value="3">Відеокарти</option>
+                            <option value="4">Процесори</option>
+                            <option value="5">Монітори</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>URL зображення</label>
+                        <input type="text" class="form-control" name="image_url" value="images/no_image.jpg">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Додати товар</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редагувати товар</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <input type="hidden" id="editId" name="id">
+                    <div class="mb-3">
+                        <label>Назва</label>
+                        <input type="text" class="form-control" id="editName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Опис</label>
+                        <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>Ціна</label>
+                        <input type="number" step="0.01" class="form-control" id="editPrice" name="price" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Кількість на складі</label>
+                        <input type="number" class="form-control" id="editStock" name="stock_quantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Категорія</label>
+                        <select class="form-control" id="editCategory" name="category_id" required>
+                            <option value="1">Ноутбуки</option>
+                            <option value="2">Комплектуючі</option>
+                            <option value="3">Відеокарти</option>
+                            <option value="4">Процесори</option>
+                            <option value="5">Монітори</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>URL зображення</label>
+                        <input type="text" class="form-control" id="editImage" name="image_url">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Зберегти зміни</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ваш кошик</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead><tr><th>Товар</th><th>Ціна</th><th>Кіл-сть</th><th>Сума</th><th></th></tr></thead>
+                    <tbody id="cartTableBody"></tbody>
+                </table>
+                <div class="text-end">
+                    <h4>Разом: <span id="cartTotal">0.00</span> грн</h4>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                <button type="button" class="btn btn-primary" onclick="checkout()">Оформити замовлення</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // КОНФІГУРАЦІЯ
+    // Якщо index.php лежить в тій же папці, використовуємо цей шлях.
+    // Якщо у вас налаштований Rewrite, змініть на '/api'
+    const API_BASE = './api/index.php';
+    
+    // СТАН ДОДАТКУ
+    let currentUser = JSON.parse(localStorage.getItem('user'));
+    let currentCategory = null;
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // ІНІЦІАЛІЗАЦІЯ
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+        loadProducts();
+        updateAuthUI();
+        updateCartUI();
+    });
+
+    // === API ЗАПИТИ ===
+
+    async function loadProducts() {
+        const sortVal = document.getElementById('sortSelect').value.split('&');
+        const sort = sortVal[0];
+        const order = sortVal[1] ? `&order=${sortVal[1].split('=')[1]}` : '';
+        
+        let url = `${API_BASE}/products?sort=${sort}${order}`;
+        if (currentCategory) {
+            url += `&category=${currentCategory}`;
+        }
+
+        try {
+            const response = await fetch(url);
+            const products = await response.json();
+            renderProducts(products);
+        } catch (e) {
+            console.error('Помилка завантаження товарів:', e);
+        }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch(`${API_BASE}/categories`);
+            const categories = await response.json();
+            const list = document.getElementById('categoriesList');
+            list.innerHTML = ''; // Очистити список перед додаванням
+            
+            // Додати "Всі товари"
+            const allLink = document.createElement('a');
+            allLink.href = '#';
+            allLink.className = 'list-group-item list-group-item-action';
+            allLink.textContent = 'Всі товари';
+            allLink.onclick = (e) => { 
+                currentCategory = null; 
+                loadProducts(); 
+                document.getElementById('pageTitle').textContent = 'Всі товари';
+                document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+            };
+            list.appendChild(allLink);
+            
+            categories.forEach(cat => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'list-group-item list-group-item-action';
+                link.textContent = `${cat.name} (${cat.product_count})`;
+                link.onclick = (e) => filterCategory(cat.category_id, e.target);
+                list.appendChild(link);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // === РЕНДЕРИНГ ===
+
+    function renderProducts(products) {
+        const grid = document.getElementById('productsGrid');
+        grid.innerHTML = '';
+
+        if (products.length === 0) {
+            grid.innerHTML = '<div class="alert alert-info w-100">Товарів не знайдено</div>';
+            return;
+        }
+
+        products.forEach(p => {
+            // Заглушка для картинки, якщо URL не дійсний або локальний файл відсутній
+            const imgUrl = p.image_url ? p.image_url : `https://placehold.co/300x200?text=${encodeURIComponent(p.name)}`;
+            
+            const btnState = p.stock_quantity > 0 ? '' : 'disabled';
+            const btnText = p.stock_quantity > 0 ? 'У кошик' : 'Немає в наявності';
+            const btnClass = p.stock_quantity > 0 ? 'btn-primary' : 'btn-secondary';
+
+            const card = `
+                <div class="col">
+                    <div class="card product-card shadow-sm">
+                        <img src="${imgUrl}" class="card-img-top product-img" alt="${p.name}">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-truncate" title="${p.name}">${p.name}</h5>
+                            <p class="card-text text-muted small">${p.category_name || 'Без категорії'}</p>
+                            <p class="card-text text-truncate">${p.description || ''}</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">${parseFloat(p.price).toFixed(2)} грн</span>
+                                <button class="btn ${btnClass} btn-sm" onclick="addToCart(${p.product_id}, '${p.name}', ${p.price})" ${btnState}>
+                                    <i class="fas fa-cart-plus"></i> ${btnText}
+                                </button>
+                            </div>
+                            ${currentUser && currentUser.role === 'admin' ? `<div class="mt-2"><button class="btn btn-sm btn-warning me-1" onclick="editProduct(${p.product_id}, '${p.name.replace(/'/g, "\\'")}', '${(p.description || '').replace(/'/g, "\\'")}', ${p.price}, ${p.stock_quantity}, ${p.category_id}, '${p.image_url}')">Редагувати</button><button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.product_id}, '${p.name.replace(/'/g, "\\'")}')">Видалити</button></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += card;
+        });
+    }
+
+    function filterCategory(id, element) {
+        // Оновлення активного класу в меню
+        document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        
+        currentCategory = id;
+        document.getElementById('pageTitle').textContent = element.textContent.split('(')[0];
+        loadProducts();
+    }
+
+    async function searchProducts(e) {
+        e.preventDefault();
+        const query = document.getElementById('searchInput').value;
+        if(query.length < 2) return loadProducts();
+
+        const response = await fetch(`${API_BASE}/products/search?q=${query}`);
+        const products = await response.json();
+        renderProducts(products);
+        document.getElementById('pageTitle').textContent = `Пошук: "${query}"`;
+    }
+
+    // === КОШИК ===
+
+    function addToCart(id, name, price) {
+        const existing = cart.find(item => item.product_id === id);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            cart.push({ product_id: id, name: name, price: price, quantity: 1 });
+        }
+        updateCartUI();
+        alert(`"${name}" додано до кошика!`);
+    }
+
+    function updateCartUI() {
+        localStorage.setItem('cart', JSON.stringify(cart));
+        document.getElementById('cartCount').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+        
+        const tbody = document.getElementById('cartTableBody');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            const sum = item.price * item.quantity;
+            total += sum;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.price}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="changeQty(${index}, -1)">-</button>
+                        ${item.quantity}
+                        <button class="btn btn-sm btn-outline-secondary" onclick="changeQty(${index}, 1)">+</button>
+                    </td>
+                    <td>${sum.toFixed(2)}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">&times;</button></td>
+                </tr>
+            `;
+        });
+        document.getElementById('cartTotal').textContent = total.toFixed(2);
+    }
+
+    function changeQty(index, delta) {
+        cart[index].quantity += delta;
+        if (cart[index].quantity <= 0) cart.splice(index, 1);
+        updateCartUI();
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartUI();
+    }
+
+    async function checkout() {
+        if (!currentUser) {
+            alert('Будь ласка, увійдіть у систему для оформлення замовлення.');
+            const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+            modal.show();
+            return;
+        }
+
+        if (cart.length === 0) {
+            alert('Кошик порожній!');
+            return;
+        }
+
+        const orderData = {
+            user_id: currentUser.id, // В реальному проекті це береться з сесії на сервері, але тут передаємо явно
+            items: cart.map(item => ({ product_id: item.product_id, quantity: item.quantity }))
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/orders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(`Замовлення #${result.order_id || 'створено'} успішно!`);
+                cart = [];
+                updateCartUI();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('cartModal'));
+                modal.hide();
+                loadProducts(); // Оновити сток
+            } else {
+                alert('Помилка: ' + result.error);
+            }
+        } catch (e) {
+            alert('Помилка сервера');
+        }
+    }
+
+    // === АДМІН ФУНКЦІЇ ===
+
+    function editProduct(id, name, description, price, stock, cat, img) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editName').value = name;
+        document.getElementById('editDescription').value = description;
+        document.getElementById('editPrice').value = price;
+        document.getElementById('editStock').value = stock;
+        document.getElementById('editCategory').value = cat;
+        document.getElementById('editImage').value = img;
+        new bootstrap.Modal(document.getElementById('editProductModal')).show();
+    }
+
+    function deleteProduct(id, name) {
+        if (confirm(`Видалити товар "${name}"?`)) {
+            fetch(`${API_BASE}/products/${id}`, {
+                method: 'DELETE'
+            }).then(response => response.json()).then(result => {
+                if (result.success) {
+                    alert('Товар видалено!');
+                    loadProducts();
+                } else {
+                    alert('Помилка: ' + result.error);
+                }
+            }).catch(e => alert('Помилка сервера'));
+        }
+    }
+
+    document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        const id = data.id;
+        delete data.id;
+
+        try {
+            const response = await fetch(`${API_BASE}/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Товар оновлено!');
+                bootstrap.Modal.getInstance(document.getElementById('editProductModal')).hide();
+                loadProducts();
+            } else {
+                alert('Помилка: ' + result.error);
+            }
+        } catch (e) {
+            alert('Помилка сервера');
+        }
+    });
+
+    // === АВТОРИЗАЦІЯ ===
+
+    document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(`${API_BASE}/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Товар додано успішно!');
+                bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
+                loadProducts(); // Оновити список товарів
+            } else {
+                alert('Помилка: ' + result.error);
+            }
+        } catch (e) {
+            alert('Помилка сервера');
+        }
+    });
+    // === АВТОРИЗАЦІЯ ===
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                currentUser = result.user;
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                updateAuthUI();
+                bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+                alert(`Вітаємо, ${currentUser.full_name}!`);
+            } else {
+                alert(result.error);
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                alert('Реєстрація успішна! Тепер увійдіть.');
+                bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+                new bootstrap.Modal(document.getElementById('loginModal')).show();
+            } else {
+                const res = await response.json();
+                alert(res.error);
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    function updateAuthUI() {
+        const authSection = document.getElementById('authSection');
+        if (currentUser) {
+            document.getElementById('usernameDisplay').textContent = currentUser.full_name;
+            // Замінюємо меню на "Вихід"
+            authSection.querySelector('.dropdown-menu').innerHTML = `
+                ${currentUser.role === 'admin' ? '<li><a class="dropdown-item" href="admin.html">Адмін панель</a></li>' : ''}
+                <li><a class="dropdown-item" href="#" onclick="logout()">Вихід</a></li>
+            `;
+            // Показуємо адмін панель якщо адмін
+            if (currentUser.role === 'admin') {
+                document.getElementById('adminPanel').style.display = 'block';
+            }
+        } else {
+            document.getElementById('usernameDisplay').textContent = 'Гість';
+            authSection.querySelector('.dropdown-menu').innerHTML = `
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Вхід</a></li>
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Реєстрація</a></li>
+            `;
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('user');
+        updateAuthUI();
+        location.reload();
+    }
+</script>
+</body>
+</html>

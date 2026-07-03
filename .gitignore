@@ -1,0 +1,37 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+*.err
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# PHP
+vendor/
+composer.lock
+composer.phar
+*.dist
+
+# Uploaded files (if any)
+uploads/
+temp/
